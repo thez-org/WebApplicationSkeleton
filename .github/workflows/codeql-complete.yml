@@ -1,0 +1,61 @@
+name: "CodeQL - Complete analysis"
+
+on:
+  schedule:
+    - cron: '44 23 9 * *' # Run CodeQL scan on a day of every month at 11:44 PM UTC
+    
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    timeout-minutes: 30 # Set timeout to 30 minutes; Change if your project takes longer to scan
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'java' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Setup Java
+      uses: actions/setup-java@v3
+      with:
+        distribution: 'temurin' # Select define your distribution
+        java-version: '17'  # Select the version of Java that your project uses
+        cache: 'maven'  # Select the package manager that your project uses (gradle, maven, or sbt)
+        check-latest: false # Set to true to check for the latest version of Java before using the version specified
+        ## If you are using a private repository, you can set the following parameters
+        ## You would need to generate a Personal Access Token (PAT) and add it as Actions secret in your repository
+        # server-id: 'github' # The server ID to use in your settings.xml file
+        # server-username: 'GITHUB_ACTOR' # The username to use when authenticating to the server
+        # server-password: {{ secrets.TOKEN }} # The password to use when authenticating to the server
+
+    # Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v2
+      with:
+        languages: ${{ matrix.language }}
+        # queries: security-extended,security-and-quality
+        # debug: true # Only use this for debugging. It will increase the runtime of the action and take up storage
+
+    # Autobuild attempts to build any compiled languages  (C/C++, C#, Go, or Java).
+    # If this step fails, then you should remove it and run the build manually (see below)
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v2
+    
+    #   If the Autobuild fails above, remove it and uncomment the following three lines.
+    #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
+    # - run: |
+    #   echo "Run, Build Application using script"
+    #   ./location_of_script_within_repo/buildscript.sh
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        category: "/language:${{matrix.language}}"
